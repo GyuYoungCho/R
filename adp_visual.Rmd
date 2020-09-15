@@ -1,0 +1,183 @@
+---
+title: "visulization"
+author: "gyu"
+date: '2020 9 15 '
+output: html_document
+---
+
+# Visualization
+
+## 시각화의 대략적 과정
+
+1. glimpse, str로 구조 파악 (개수, type)
+2. pairs로 관계보기 (너무 크면 sample_n이용)
+3. 하나씩 보기 (geom_histogram, geom_bar)
+4. 상관관계 (geom_point(연속형), geom_boxplot(연속, 범주))
+5. 고차원 관계 생각 (geom에 제 3,4의 변수 추가해 보기, fact_wrap)
+6. 의미있는 결과를 얻을 때까지 위의 과정 반봅
+
+---
+
+## 합리적이고 유용한 원칙
+1. 비교, 대조, 차이
+2. 인과 관계, 상관 관계
+3. 한 도표에 여러 변수 보이기
+4. 텍스트, 숫자. 이미지, 그래프를 한 곳에 통합
+5. 정보 전달에 도움이 되지 않는 요소 줄이기
+
+
+```{r setup, include=FALSE}
+install.packages("caret")
+library(dplyr)
+library(ggplot2)
+install.packages("sqldf")
+library(sqldf)
+install.packages("gapminder")
+library(gapminder)
+```
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r setup, include=FALSE}
+sample_n(gapminder,10)
+# sample_frac(gap, 0.01)
+```
+
+
+```{r cars}
+df1 = data.frame(x=c(1,2), y=2:1)
+df2 = data.frame(x=c(1,3), a=10)
+sqldf("select * from df1 inner join df2 on df1.x=df2.x")
+```
+
+```{r pressure, echo=FALSE}
+gapminder[order(gapminder$year, gapminder$country),]
+```
+```{r}
+gapminder %>% summarise(n_obs = n(), n_country = n_distinct(country),
+                        med_gdpc = median(gdpPercap))
+```
+
+
+```{r}
+opar = par(mfrow=c(2,2))
+hist(gapminder$lifeExp)
+hist(gapminder$gdpPercap)
+hist(log10(gapminder$gdpPercap),nclass=50)
+plot(log10(gapminder$gdpPercap), gapminder$lifeExp, cex=.5)
+par(opar)
+```
+
+
+```{r}
+cor(gapminder$lifeExp, log10(gapminder$gdpPercap))
+```
+
+
+```{r}
+gapminder %>% ggplot(aes(x=lifeExp)) + geom_histogram()
+```
+
+```{r}
+gapminder %>% ggplot(aes(x=gdpPercap, y=lifeExp)) + geom_point() + scale_x_log10() + geom_smooth()
+```
+```{r}
+df = data.frame(gp = factor(rep(letters[1:3],each=10)), y=rnorm(30))
+ds = df %>% group_by(gp) %>% summarise(mean = mean(y), sd = sd(y))
+
+df %>% ggplot(aes(x=gp, y=y)) + geom_point() + geom_point(data = ds,aes(y = mean), colour = 'red', size=3)
+```
+
+
+```{r}
+gapminder %>% ggplot(aes(x=gdpPercap)) + geom_freqpoly() + scale_x_log10()
+summary(gapminder)
+```
+
+
+```{r}
+prop.table(table(diamonds$cut))
+```
+
+
+```{r}
+diamonds %>% ggplot(aes(cut)) + geom_bar()
+```
+
+```{r}
+diamonds %>%
+    group_by(cut) %>%
+    tally() %>%
+    mutate(pct = round(n/sum(n)*100,1))
+```
+
+
+```{r}
+diamonds %>% ggplot(aes(carat, price)) + geom_point(alpha=0.1)
+```
+
+
+```{r}
+mpg %>% ggplot(aes(cyl, hwy)) + geom_jitter()
+```
+
+```{r}
+pairs(diamonds %>% sample_n(1000))
+```
+
+
+```{r}
+mpg %>% ggplot(aes(class, hwy)) + geom_boxplot()
+
+```
+
+
+```{r}
+mpg %>% ggplot(aes(class, hwy)) + geom_jitter(col='gray') + geom_boxplot(alpha=.5)
+
+```
+
+```{r}
+mpg %>% mutate(class=reorder(class,hwy, median)) %>% ggplot(aes(class, hwy)) + geom_jitter(col='gray') + geom_boxplot(alpha=.5) + coord_flip()
+```
+
+
+```{r}
+xtabs(Freq ~ Class + Sex + Age + Survived, data.frame(Titanic)) 
+```
+
+
+```{r}
+mosaicplot(Titanic, main="t")
+```
+
+```{r}
+prop.table(apply(Titanic, c(3,4), sum), margin = 1)
+```
+
+
+```{r}
+t2 = data.frame(Titanic)
+```
+
+
+```{r}
+t2 %>% group_by(Sex) %>% summarise(n = sum(Freq), survivors = sum(ifelse(Survived=='Yes',Freq,0))) %>% mutate(rate_survial=survivors/n)
+```
+```{r}
+gapminder %>% filter(year==2007) %>% ggplot(aes(gdpPercap, lifeExp)) +
+    geom_point(aes(size=pop, col=continent)) + scale_x_log10() + ggtitle("gap 2007")
+
+```
+
+```{r}
+gapminder %>% ggplot(aes(year, lifeExp, group=country, col=continent)) + geom_line()
+```
+
+
+```{r}
+gapminder %>% ggplot(aes(year, lifeExp, group=country)) + geom_line() + facet_wrap(~ continent)
+```
+
