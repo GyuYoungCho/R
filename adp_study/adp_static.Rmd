@@ -1,0 +1,147 @@
+---
+title: "adp_static"
+author: "gyu"
+date: '2020 9 16 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+y = sleep$extra[sleep$group==1]
+par(mfrow=c(2,2))
+hist(y)
+boxplot(y)
+qqnorm(y)
+qqline(y)
+hist(y,prob=TRUE)
+lines(density(y), lty=2)
+```
+
+## 데이터 분석
+
+1. glimpse, str, head
+2. summary : 요약 통계, 결측치 확인
+3. plot, pairs등 무작정 해보기, 개수 많으면 sample_n
+
+```{r}
+glimpse(mpg)
+```
+
+```{r}
+summary(mpg)
+```
+
+## 수량 변수
+1. hist, boxplot (geom_histogram, density 등)
+2. 요약 통계
+3. 정규성(qqnorm, qqline)
+4. 가설검정, 신뢰구간(t.test)
+5. 이상점 찾기
+
+```{r}
+range(mpg$hwy)
+quantile((mpg$hwy))
+```
+
+```{r}
+t.test(mpg$hwy, mu = 22.9, alternative = "greater")
+```
+
+- mad : median absolute deviance
+```{r}
+hwy = mpg$hwy
+c(median(hwy), mad(hwy))
+```
+## 범주형(이진)
+1. table, xtabs, prop.table
+2. barplot
+3. binom.test
+
+```{r}
+summary(mpg)
+```
+## XY
+### 둘다 수량
+1. plot(ggplot point, jitter, smooth)
+2. cor
+3. 회귀 모형 -> 이상치, 잔차분석
+
+### 수량y, 범주x
+1. boxplot
+2. lm(anova)
+3. plot.lm
+
+### 수량x, 범주y
+1. 산점도
+2. glm
+3. plot.glm
+
+## 둘다 수량
+```{r}
+ggplot(mpg, aes(cty, hwy)) + geom_jitter() + geom_smooth(method='lm')
+```
+
+
+```{r}
+with(mpg,cor(cty,hwy))
+# kendall, spearman
+```
+```{r}
+hwy_lm = lm(hwy~cty, data=mpg)
+summary(hwy_lm)
+```
+
+
+```{r}
+predict(hwy_lm, newdata = data.frame(cty=c(10,20,30)))
+```
+
+```{r}
+predict(hwy_lm, newdata = data.frame(cty=c(10,20,30)),se.fit=TRUE)
+```
+
+
+```{r}
+par(mfrow = c(2,2))
+plot(hwy_lm)
+```
+```{r}
+library(MASS)
+set.seed(123)
+lqs(stack.loss ~., data=stackloss)
+```
+
+```{r}
+plot(hwy ~ displ, data=mpg)
+mpg_lo = loess(hwy ~displ, data=mpg)
+xs = seq(2,7,length.out = 100)
+mpg_pre = predict(mpg_lo, newdata = data.frame(displ = xs), se=TRUE)
+lines(xs, mpg_pre$fit)
+```
+
+```{r}
+ggplot(mpg,aes(displ, hwy)) + geom_point() + geom_smooth()
+```
+## 수량y, 범주x
+```{r}
+mpg %>% ggplot(aes(class, hwy)) + geom_boxplot()
+```
+
+```{r}
+hwy_lm = lm(hwy ~ class,data=mpg)
+summary(hwy_lm)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(hwy_lm)
+```
+
